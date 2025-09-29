@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday, Mary Anne!</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff; /* Light blue for a serene feel */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            color: #333;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            position: relative;
+            z-index: 1;
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+        h1 {
+            color: #ff69b4; /* Pink for celebration */
+            font-size: 2.5em;
+            animation: fadeIn 2s ease-in-out, pulse 2s infinite alternate;
+        }
+        p {
+            font-size: 1.2em;
+            line-height: 1.5;
+            margin: 20px 0;
+            animation: fadeIn 3s ease-in-out;
+        }
+        .bible-blessing {
+            font-style: italic;
+            color: #555;
+        }
+        button {
+            background-color: #4caf50; /* Green for positivity */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .balloon {
+            position: absolute;
+            width: 50px;
+            height: 70px;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            bottom: -100px;
+            animation: float 5s infinite ease-in-out;
+            cursor: pointer;
+            transition: transform 0.3s, opacity 0.5s;
+        }
+        .balloon.popped {
+            opacity: 0;
+            transform: scale(1.5);
+        }
+        .balloon:nth-child(1) { background-color: #ff0000; left: 5%; animation-delay: 0s; }
+        .balloon:nth-child(2) { background-color: #00ff00; left: 25%; animation-delay: 1s; }
+        .balloon:nth-child(3) { background-color: #0000ff; right: 25%; animation-delay: 2s; }
+        .balloon:nth-child(4) { background-color: #ffff00; left: 45%; animation-delay: 0.5s; }
+        .balloon:nth-child(5) { background-color: #ff00ff; right: 5%; animation-delay: 1.5s; }
+        .balloon:hover {
+            transform: scale(1.2);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes pulse {
+            from { text-shadow: 0 0 5px #ff69b4; }
+            to { text-shadow: 0 0 15px #ff69b4; }
+        }
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(5deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+        /* Memory Game Styles */
+        .game-section {
+            margin-top: 30px;
+        }
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 60px);
+            gap: 10px;
+            margin: 20px auto;
+            width: fit-content;
+        }
+        .card {
+            width: 60px;
+            height: 60px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0;
+            transition: background-color 0.3s;
+        }
+        .card.revealed {
+            font-size: 30px;
+            background-color: #fff;
+        }
+        .card.matched {
+            background-color: #90ee90;
+        }
+        .score {
+            font-size: 1em;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Happy Birthday, Mary Anne!</h1>
+        <p>I love you so much! May this special day overflow with God's abundant blessings, joy, and unwavering love.</p>
+        <p class="bible-blessing">As a cherished child of God, may your year ahead be filled with faith, hope, and divine grace guiding every step.</p>
+        <button id="celebrateBtn">Celebrate!</button>
+        <div class="balloon"></div>
+        <div class="balloon"></div>
+        <div class="balloon"></div>
+        <div class="balloon"></div>
+        <div class="balloon"></div>
+
+        <!-- Memory Game Section -->
+        <div class="game-section">
+            <h2>Birthday Memory Game</h2>
+            <p>Match the pairs to celebrate!</p>
+            <div class="memory-grid" id="memoryGrid"></div>
+            <div class="score" id="score">Pairs Found: 0/8</div>
+        </div>
+    </div>
+    <canvas id="confettiCanvas"></canvas>
+
+    <script>
+        // Confetti, Fireworks, and Balloon Logic
+        const celebrateBtn = document.getElementById('celebrateBtn');
+        const canvas = document.getElementById('confettiCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let confettiParticles = [];
+        let fireworks = [];
+
+        function createConfetti() {
+            console.log('Creating confetti particles');
+            confettiParticles = [];
+            for (let i = 0; i < 300; i++) {
+                confettiParticles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    r: Math.random() * 6 + 2,
+                    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                    tilt: Math.random() * 10 - 5,
+                    tiltAngle: Math.random() * Math.PI * 2,
+                    velocity: Math.random() * 3 + 2,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: Math.random() * 5 - 2.5
+                });
+            }
+        }
+
+        function drawConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            confettiParticles.forEach(p => {
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation * Math.PI / 180);
+                ctx.beginPath();
+                ctx.lineWidth = p.r;
+                ctx.strokeStyle = p.color;
+                ctx.moveTo(p.tilt + p.r / 4, 0);
+                ctx.lineTo(p.tilt, p.tilt + p.r / 4);
+                ctx.stroke();
+                ctx.restore();
+                p.y += p.velocity;
+                p.tiltAngle += 0.1;
+                p.tilt = Math.sin(p.tiltAngle) * 15;
+                p.rotation += p.rotationSpeed;
+                if (p.y > canvas.height) p.y = -10;
+            });
+            drawFireworks();
+            requestAnimationFrame(drawConfetti);
+        }
+
+        function createFireworks() {
+            console.log('Creating fireworks');
+            fireworks = [];
+            for (let i = 0; i < 10; i++) {
+                fireworks.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height / 2,
+                    particles: Array.from({length: 50}, () => ({
+                        angle: Math.random() * Math.PI * 2,
+                        speed: Math.random() * 5 + 2,
+                        life: 100,
+                        color: `hsl(${Math.random() * 360}, 100%, 50%)`
+                    })),
+                    life: 100
+                });
+            }
+        }
+
+        function drawFireworks() {
+            fireworks.forEach(fw => {
+                fw.particles.forEach(p => {
+                    if (p.life > 0) {
+                        ctx.beginPath();
+                        ctx.arc(fw.x + Math.cos(p.angle) * p.speed * (100 - p.life), 
+                                fw.y + Math.sin(p.angle) * p.speed * (100 - p.life), 2, 0, Math.PI * 2);
+                        ctx.fillStyle = p.color;
+                        ctx.fill();
+                        p.life -= 2;
+                    }
+                });
+                fw.life -= 2;
+            });
+            fireworks = fireworks.filter(fw => fw.life > 0);
+        }
+
+        celebrateBtn.addEventListener('click', () => {
+            createConfetti();
+            createFireworks();
+            drawConfetti();
+        });
+
+        document.querySelectorAll('.balloon').forEach(balloon => {
+            balloon.addEventListener('click', () => {
+                console.log('Balloon popped');
+                balloon.classList.add('popped');
+                setTimeout(() => balloon.style.display = 'none', 500);
+            });
+        });
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            console.log('Window resized');
+        });
+
+        // Memory Game Logic
+        const cards = [
+            '🎂', '🎂', '🎈', '🎈', '🎁', '🎁', '🎉', '🎉',
+            '🍰', '🍰', '🎀', '🎀', '🎭', '🎭', '🎯', '🎯'
+        ];
+        let grid = document.getElementById('memoryGrid');
+        let score = document.getElementById('score');
+        let firstCard = null;
+        let secondCard = null;
+        let lockBoard = false;
+        let pairsFound = 0;
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function createBoard() {
+            shuffle(cards);
+            cards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.classList.add('card');
+                cardElement.dataset.value = card;
+                cardElement.addEventListener('click', flipCard);
+                grid.appendChild(cardElement);
+            });
+            console.log('Memory board created');
+        }
+
+        function flipCard() {
+            if (lockBoard) return;
+            if (this === firstCard) return;
+
+            this.classList.add('revealed');
+            this.textContent = this.dataset.value;
+
+            if (!firstCard) {
+                firstCard = this;
+                console.log('First card flipped');
+                return;
+            }
+
+            secondCard = this;
+            lockBoard = true;
+            console.log('Second card flipped');
+            checkForMatch();
+        }
+
+        function checkForMatch() {
+            let isMatch = firstCard.dataset.value === secondCard.dataset.value;
+            if (isMatch) {
+                disableCards();
+            } else {
+                unflipCards();
+            }
+        }
+
+        function disableCards() {
+            firstCard.classList.add('matched');
+            secondCard.classList.add('matched');
+            pairsFound++;
+            score.textContent = `Pairs Found: ${pairsFound}/8`;
+            console.log(`Match found! Pairs: ${pairsFound}`);
+            resetBoard();
+            if (pairsFound === 8) {
+                alert('Happy Birthday, Mary Anne! You matched all the pairs!');
+                console.log('Game completed');
+            }
+        }
+
+        function unflipCards() {
+            setTimeout(() => {
+                firstCard.classList.remove('revealed');
+                secondCard.classList.remove('revealed');
+                firstCard.textContent = '';
+                secondCard.textContent = '';
+                console.log('Cards unflipped (no match)');
+                resetBoard();
+            }, 1000);
+        }
+
+        function resetBoard() {
+            [firstCard, secondCard] = [null, null];
+            lockBoard = false;
+        }
+
+        createBoard();
+    </script>
+</body>
+</html>
